@@ -13,6 +13,16 @@ test_that("Test GetSports returns the good type",{
 
 
 
+test_that("Test GetCurrencies returns the good type",{
+
+  res <- GetCurrencies()
+  expect_is(res,"data.frame")
+  target.cols <- c("Code", "Rate" ,"Name")
+  expect_equal(names(res),target.cols)
+
+})
+
+
 
 test_that("Test GetLeaguesByID returns the good type",{
 
@@ -47,18 +57,20 @@ test_that("Test GetLeagues returns the good type",{
 
 test_that("Test GetLeagues works fine with regex",{
 
-  res <- GetLeagues(c("basket","socc"),regex=TRUE)
   target <- GetLeagues(c("Basketball","Soccer"))
-  target <- res[order(target[,1]),]
-  mm <- merge(res.target,res)
-  result <- mm[order(mm[,1]),]
 
-  expect_equivalent(result,target)
+  res <- GetLeagues(c("basket","socc"),regex=TRUE)
+
+
+  res <- merge(target,res)
+
+  expect_equivalent( res[order(res[,1]),],
+                     target[order(target[,1]),])
 
 })
 test_that("GetFixtures works fine",{
 
-  res <- GetFixtures(portid=29, leagueid=c(11,45),
+  res <- GetFixtures(sportname="Soccer", leagueid=c(11,45),
                      since=26142345,isLive=0)
   expect_is(res,"data.frame")
   target.cols <-  c("SportID","Last","League",
@@ -79,18 +91,14 @@ test_that("GetOdds  works fine",{
 
 })
 
-test_that("GetCurrencies  works fine",{
-
-  res <- GetCurrencies()
-  expect_is(res,"data.frame")
-
-
-})
 
 test_that("GetClientBalance  works fine",{
 
   res <- GetClientBalance ()
-  expect_is(res,"data.frame")
+  expect_is(res,"list")
+  expect_equal(c("availableBalance", "outstandingTransactions", "givenCredit",
+                 "currency"),
+               names(res))
 
 })
 

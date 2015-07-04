@@ -8,6 +8,6 @@ Maintainer: Amine GASSEM <contact@ag-study.com>
 Description: Get and Post data via the pinnaclesports.com API
 License: MIT
 LazyData: TRUE
-Imports: XML,RCurl,httr
+Imports: XML,RCurl,httr,jsonlite
 Suggests: testthat
 

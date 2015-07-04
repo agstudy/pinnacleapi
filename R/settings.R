@@ -1,6 +1,7 @@
 
 
 .settings <- new.env()
+.settings$url <- "https://api.pinnaclesports.com"
 
 .settings$credentials <- list(
   user = "TESTAPI",

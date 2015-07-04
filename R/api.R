@@ -1,10 +1,10 @@
 
-base_url <- "https://api.pinnaclesports.com"
+
 
 authorization <-
   function (user = get_user(),pwd =get_pwd()){
     credentials = paste(user,pwd,sep=":")
-    credentials.r = charToRaw(enc2utf8(x))
+    credentials.r = charToRaw(enc2utf8(credentials))
     paste0("Basic ", base64Encode(credentials.r, "character"))
 
   }
@@ -29,12 +29,11 @@ authorization <-
 #' @examples
 #' GetSports()
 GetSports <-
-  function(force){
+  function(force=FALSE){
     if(length(.settings$sports)==0 || force){
-      r <- GET(paste0(base_url,"/v1/sports"),
+      r <- GET(paste0(.settings$url ,"/v1/sports"),
                add_headers("Authorization"= authorization())
       )
-      content(r, "text")
       dc <- xmlParse(content(r, "text"))
       xml_path <- "/rsp/sports/sport"
       .settings$sports <-
@@ -48,6 +47,40 @@ GetSports <-
     .settings$sports
   }
 
+
+
+#' Get the list of supported currencies
+#'
+#' @param force boolean if false use cached data.
+#' @return  a data frame having columns:
+#' \itemize{
+#' \item Code
+#' \item Rate
+#' \item Name
+#' }
+#'
+#' @export
+#'
+#' @examples
+#' GetCurrencies()
+GetCurrencies <-
+  function(force=FALSE){
+    if(length(.settings$currencies)==0 || force){
+      r <- GET(paste0(.settings$url ,"/v1/currencies"),
+               add_headers("Authorization"= authorization())
+      )
+      dc <- xmlParse(content(r, "text"))
+      xml_path <- "/rsp/currencies/currency"
+      .settings$currencies <-
+        data.frame("Code"=xpathSApply(dc,xml_path,xmlGetAttr,"code"),
+                   "Rate"=xpathSApply(dc,xml_path,xmlGetAttr,"rate"),
+                   "Name" = xpathSApply(dc,xml_path,xmlValue),
+                   check.names = FALSE,
+                   stringsAsFactors = FALSE)
+    }
+
+    .settings$currencies
+  }
 
 
 #' Get leagues for a sportid
@@ -67,7 +100,7 @@ GetSports <-
 #'
 GetLeaguesByID <-
   function(sportid){
-    r <- GET(paste0(base_url,"/v1/leagues"),
+    r <- GET(paste0(.settings$url ,"/v1/leagues"),
              add_headers("Authorization"= authorization()),
              query = list(sportid=sportid)
     )
@@ -115,11 +148,89 @@ GetLeagues <-
     ids.serach <- if(!regex)
       match(sports,sports.all[,"Sport Name"])
     else {
-             patt <- paste(tolower(sports),collapse='|')
-             ids[grepl(patt,tolower(sports.all[,"Sport Name"]))]
-      }
+      patt <- paste(tolower(sports),collapse='|')
+      ids[grepl(patt,tolower(sports.all[,"Sport Name"]))]
+    }
     do.call(rbind,
             lapply(ids.serach,GetLeaguesByID))
 
   }
 
+
+
+#' Get Fixtures
+#'
+#' @param sportname The sport name for which to retrieve the fixutres
+#' @param leagueids vector of characters.
+#' @param since numeric This is used to receive incremental updates.
+#' Use the value of last from previous fixtures response.
+#' @param isLive boolean if TRUE retrieves ONLY live events
+#'
+#' @return returns a data frame with columns:
+#' \itemize{
+#' \item SportID
+#' \item Last
+#' \item League
+#' \item LeagueID
+#' \item EventID
+#' \item StartTime
+#' \item HomeTeamName
+#' \item AwayTeamName
+#' \item Rotation Number
+#' \item Live Status
+#' \item Status
+#' \item Parlay Status
+#' }
+#'
+#' @import jsonlite
+#' @export
+#'
+#' @examples
+#'  GetFixtures(sportname="Soccer", leagueid=c(11,45),since=26142345,isLive=TRUE)
+#'
+
+GetFixtures <-
+  function(sportname,leagueids,since,isLive){
+
+    ## retrieve sportid
+    if (missing(sportname))
+      stop("You should prove a sport name as a character")
+    ## TODO : serach by sport name as a regex
+    sportid <- GetSports(F)[,"Sport ID"][sportname== GetSports(F)[,"Sport Name"]]
+    ##
+    if(missing(leagueids))
+      leagueids <- GetLeaguesByID(sportid)
+
+    r <- GET(paste0(.settings$url ,"/v1/leagues"),
+             add_headers(Authorization= authorization(),
+                         "Content-Type" = "application/json"),
+             query = list(sportid=sportid,
+                          leagueid = paste(leagueids,collapse=','),
+                          since=since,
+                          isLive=isLive*1))
+
+    fromJSON(content(r))
+
+  }
+
+
+#' Get Client Balance Response
+#'
+#' @param force boolean if TRUE relaod the data from the site otherwise use the cache
+#'
+#' @return anmed vector client balance parameter
+#' @export
+#'
+#' @examples
+#' GetClientBalance()
+GetClientBalance <- function(force=FALSE){
+
+  if(length(.settings$ClientBalance)==0 || force){
+    r <- GET(paste0(.settings$url ,"/v1/client/balance"),
+             add_headers("Authorization"= authorization(),
+                         "Content-Type" = "application/json")
+    )
+    .settings$ClientBalance <- fromJSON(content(r, "text"))
+  }
+  .settings$ClientBalance
+}
