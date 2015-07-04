@@ -97,6 +97,7 @@ GetCurrencies <-
 #' \item AllowRoundRobin
 #' \item League Name
 #' }
+#' @export
 #'
 GetLeaguesByID <-
   function(sportid){
@@ -104,15 +105,14 @@ GetLeaguesByID <-
              add_headers("Authorization"= authorization()),
              query = list(sportid=sportid)
     )
-    content(r, "text")
     dc <- xmlParse(content(r, "text"))
     xml_path <- "/rsp/leagues/league"
     data.frame("League ID"= xpathSApply(dc,xml_path,xmlGetAttr,"id"),
-               "Feed Contents"   = xpathSApply(dc,xml_path,xmlGetAttr,"feedContents"),
-               "HomeTeamType"= xpathSApply(dc,xml_path,xmlGetAttr,"homeTeamType"),
-               "AllowRoundRobin"   = xpathSApply(dc,xml_path,xmlGetAttr,"allowRoundRobins"),
-               "League Name" = xpathSApply(dc,xml_path,xmlValue),
-               check.names = FALSE,
+               "Feed Contents"= xpathSApply(dc,xml_path,xmlGetAttr,"feedContents"),
+               "HomeTeamType" = xpathSApply(dc,xml_path,xmlGetAttr,"homeTeamType"),
+               "AllowRoundRobin"= xpathSApply(dc,xml_path,xmlGetAttr,"allowRoundRobins"),
+               "League Name"= xpathSApply(dc,xml_path,xmlValue),
+               check.names  = FALSE,
                stringsAsFactors = FALSE)
   }
 
@@ -138,15 +138,15 @@ GetLeaguesByID <-
 #'GetLeagues("Soccer")
 #'GetLeagues(c("Soccer","Boxing"))
 #'GetLeagues(c("soccer","box"),regex=TRUE)
-#'
-#'
+
+
 GetLeagues <-
   function(sports,force=FALSE,regex=FALSE){
     ## this is called once
     sports.all <- GetSports(force)
     ids <- sports.all[,"Sport ID"]
     ids.serach <- if(!regex)
-      match(sports,sports.all[,"Sport Name"])
+      ids[match(sports,sports.all[,"Sport Name"])]
     else {
       patt <- paste(tolower(sports),collapse='|')
       ids[grepl(patt,tolower(sports.all[,"Sport Name"]))]
@@ -334,6 +334,7 @@ GetOdds <-
 #'   \item{status}  If Status is PROCESSED_WITH_ERROR errorCode will be in the response
 #'   \item{errorCode}
 #' }
+#' @importFrom uuid UUIDgenerate
 #' @export
 #'
 #' @examples
@@ -351,7 +352,6 @@ PlaceBet <-
            periodNumber,
            betType,
            lineId){
-
     r <- POST(paste0(.settings$url ,"/v1/odds"),
              add_headers(Authorization= authorization(),
                          "Content-Type" = "application/json"),

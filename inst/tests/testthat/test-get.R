@@ -44,6 +44,14 @@ test_that("Test GetLeagues works fine with scalar",{
 
 })
 
+test_that("Test GetLeagues returns nom empty data.frame",{
+
+  res <- GetLeagues("Soccer")
+  expect_is(res,"data.frame")
+  expect_true(nrow(res)>0)
+
+})
+
 
 test_that("Test GetLeagues returns the good type",{
 
