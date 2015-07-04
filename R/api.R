@@ -201,15 +201,25 @@ GetFixtures <-
     if(missing(leagueids))
       leagueids <- GetLeaguesByID(sportid)
 
-    r <- GET(paste0(.settings$url ,"/v1/leagues"),
+    r <- GET(paste0(.settings$url ,"/v1/fixtures"),
              add_headers(Authorization= authorization(),
                          "Content-Type" = "application/json"),
              query = list(sportid=sportid,
                           leagueid = paste(leagueids,collapse=','),
                           since=since,
                           isLive=isLive*1))
+    res <-  fromJSON(content(r,type="text"))
 
-    fromJSON(content(r))
+    out <- cbind(res$sportId,
+                 res$last,
+                  do.call(rbind,
+                          Map(function(id,events)data.frame(id,events) ,
+                              res$league$id,res$league$events)))
+
+    colnames(out) <- c("SportID","Last","LeagueID","EventID",
+                       "StartTime","HomeTeamName","AwayTeamName",
+                   "Rotation Number","Live Status","Status","Parlay Status")
+   out
 
   }
 
@@ -234,3 +244,129 @@ GetClientBalance <- function(force=FALSE){
   }
   .settings$ClientBalance
 }
+
+
+#' Get Odds
+#'
+#' @param sportname The sport name for which to retrieve the fixutres
+#' @param leagueids vector of characters.
+#' @param since numeric This is used to receive incremental updates.
+#' Use the value of last from previous fixtures response.
+#' @param isLive boolean if TRUE retrieves ONLY live events
+#'
+#' @return list of lists
+#' @export
+#'
+#' @examples
+#' GetOdds (sportname="Soccer", leagueid=c(11,45),since=26142345,isLive=0)
+#'
+
+GetOdds <-
+  function(sportname,leagueids,since,isLive){
+    ## retrieve sportid
+    if (missing(sportname))
+      stop("You should prove a sport name as a character")
+    ## TODO : serach by sport name as a regex
+    sportid <- GetSports(F)[,"Sport ID"][sportname== GetSports(F)[,"Sport Name"]]
+    ##
+    if(missing(leagueids))
+      leagueids <- GetLeaguesByID(sportid)
+
+    r <- GET(paste0(.settings$url ,"/v1/odds"),
+             add_headers(Authorization= authorization(),
+                         "Content-Type" = "application/json"),
+             query = list(sportid=sportid,
+                          leagueid = paste(leagueids,collapse=','),
+                          since=since,
+                          isLive=isLive*1))
+    fromJSON(content(r,type="text"))
+#
+#     res <- unlist(res,recursive = FALSE)
+#     events = unlist(res$leagues.events,recursive = FALSE)
+#
+#     data.frame (sportId= res$sportId,
+#                 last= res$last,
+#                 leagueids = res$leagues.id
+#     )
+
+  }
+
+
+
+
+
+#' Place Bet
+#'
+#' Place bet in the system
+#'
+#' @param acceptBetterLine boolean Whether or not to accept a bet
+#'  when there is a line change in favor of the client
+#' @param oddsFormat character Bet is processed with this odds format
+#' it takes values in :
+#' \itemize{
+#' \item{AMERICAN}
+#' \item{DECIMAL}
+#' \item{HONGKONG}
+#' \item{INDONESIAN}
+#' \item{MALAY}
+#' }
+#' @param stake numeric Wagered amount in Client’s currency
+#' @param winRiskStake WIN_RISK_TYPE Whether the stake amount is risk or win amount
+#' \itemize{
+#' \item{WIN}
+#' \item{RISK}
+#' }
+#' @param sportId numeric the sport id
+#' @param eventId numeric the vent id
+#' @param periodNumber This represents the period of the match. For example
+#' For soccer : #' 0-->Game 1-->1st Half 2-->2nd Half
+#' @param betType BET_TYPE
+#' \itemize{
+#' \item{SPREAD	}
+#' \item{MONEYLINE}
+#' \item{TOTAL_POINTS}
+#' \item{TEAM_TOTAL_POINTS}
+#' }
+#' @param lineId numeric Line identification
+#'
+#' @return list containing :
+#' \itemize{
+#'   \item{status}  If Status is PROCESSED_WITH_ERROR errorCode will be in the response
+#'   \item{errorCode}
+#' }
+#' @export
+#'
+#' @examples
+#' PlaceBet (acceptBetterLine=TRUE,oddsFormat="AMERICAN", stake=10,
+#'           winRiskStake="WIN",sportId=29,eventId=307962592,
+#'            periodNumber=0,betType="MONEYLINE",lineId=103648474)
+
+PlaceBet <-
+  function(acceptBetterLine,
+           oddsFormat,
+           stake,
+           winRiskStake,
+           sportId,
+           eventId,
+           periodNumber,
+           betType,
+           lineId){
+
+    r <- POST(paste0(.settings$url ,"/v1/odds"),
+             add_headers(Authorization= authorization(),
+                         "Content-Type" = "application/json"),
+             query = list(uniqueRequestId=UUIDgenerate(),
+                          acceptBetterLine=acceptBetterLine,
+                          oddsFormat=oddsFormat,
+                          stake=stake,
+                          winRiskStake=winRiskStake,
+                          sportId=sportId,
+                          eventId=eventId,
+                          periodNumber=periodNumber,
+                          betType=betType,
+                          lineId=lineId)
+    )
+    fromJSON(content(r,type="text"))
+
+  }
+

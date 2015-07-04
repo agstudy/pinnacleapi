@@ -73,7 +73,7 @@ test_that("GetFixtures works fine",{
   res <- GetFixtures(sportname="Soccer", leagueid=c(11,45),
                      since=26142345,isLive=0)
   expect_is(res,"data.frame")
-  target.cols <-  c("SportID","Last","League",
+  target.cols <-  c("SportID","Last",
                     "LeagueID","EventID","StartTime",
                     "HomeTeamName","AwayTeamName","Rotation Number",
                     "Live Status","Status" ,"Parlay Status")
@@ -84,7 +84,7 @@ test_that("GetFixtures works fine",{
 
 test_that("GetOdds  works fine",{
 
-  res <- GetOdds (sportid=29, leagueid=c(11,45),
+  res <- GetOdds (sportname="Soccer", leagueid=c(11,45),
                   since=26142345,isLive=0)
   expect_is(res,"data.frame")
 
