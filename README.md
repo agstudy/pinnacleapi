@@ -33,4 +33,4 @@ You can see inst/tests for examples of use.
 To run tests 
 
      library(testthat)
-     test_package(pinnacleAPI)
+     test_package("pinnacleAPI")
