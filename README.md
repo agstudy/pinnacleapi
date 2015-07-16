@@ -19,7 +19,9 @@ you can install the development version from Github:
       
 # Documentation
 
-In addiotional to the API documenation all the function in the package are documenated. You can see tests for example
+In addiotional to the API documenation all the function in the package are documented. 
+
+You can see inst/tests for examples of use.
 
 
 # Tests
