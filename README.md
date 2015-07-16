@@ -34,3 +34,7 @@ To run tests
 
      library(testthat)
      test_package("pinnacleAPI")
+     
+# License
+
+This package is licensed to you under the terms of the MIT License.
