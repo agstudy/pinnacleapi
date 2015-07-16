@@ -4,6 +4,10 @@
  
  
       library(pinnacleAPI)
+      ## set user/pwd this should be called only at initialisation
+      set_ser("user1")
+      set_pwd("pwd") 
+      ## get all sports 
       res <- GetSports()
   
   
